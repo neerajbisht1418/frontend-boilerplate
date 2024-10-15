@@ -21,6 +21,12 @@ const Welcome = () => {
           >
             Sign Up
           </Link>
+          <Link
+            to="/dashboard"
+            className="px-8 py-3 bg-white text-indigo-600 font-semibold rounded-full shadow-lg hover:bg-gray-200 transition-all duration-300"
+          >
+            Dashboard
+          </Link>
         </div>
       </div>
     </div>
