@@ -1,30 +1,34 @@
-// src/components/layout/Sidebar.jsx
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { Home, BarChart2, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+
+const SidebarLink = ({ to, icon: Icon, children }) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) =>
+      `flex items-center space-x-2 p-2 rounded-lg transition-colors duration-200 ${
+        isActive
+          ? 'bg-blue-500 text-white'
+          : 'text-gray-600 hover:bg-gray-100'
+      }`
+    }
+  >
+    <Icon size={20} />
+    <span>{children}</span>
+  </NavLink>
+);
 
 const Sidebar = () => {
   return (
-    <aside className="bg-gray-800 text-white w-64 min-h-screen p-4">
+    <aside className="bg-white text-gray-800 w-64 min-h-screen p-4 border-r border-gray-200">
+      <div className="text-2xl font-bold mb-8">Your Logo</div>
       <nav className="space-y-2">
-        <Link to="/" className="flex items-center space-x-2 p-2 hover:bg-gray-700 rounded">
-          <Home size={20} />
-          <span>Dashboard</span>
-        </Link>
-        <Link to="/analytics" className="flex items-center space-x-2 p-2 hover:bg-gray-700 rounded">
-          <BarChart2 size={20} />
-          <span>Analytics</span>
-        </Link>
-        <Link to="/settings" className="flex items-center space-x-2 p-2 hover:bg-gray-700 rounded">
-          <Settings size={20} />
-          <span>Settings</span>
-        </Link>
+        <SidebarLink to="/dashboard" icon={Home}>Dashboard</SidebarLink>
+        <SidebarLink to="/analytics" icon={BarChart2}>Analytics</SidebarLink>
+        <SidebarLink to="/settings" icon={Settings}>Settings</SidebarLink>
       </nav>
     </aside>
   );
 };
 
-export default Sidebar
-
-
-
+export default Sidebar;
