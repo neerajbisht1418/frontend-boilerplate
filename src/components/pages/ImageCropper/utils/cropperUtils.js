@@ -83,3 +83,40 @@ export const validateCropBounds = (cropperRef) => {
 
   return true;
 };
+
+export const validateRepetitionSettings = (settings) => {
+  const { repetitionEnabled, aspectRatio, targetDimension, customRatio } = settings;
+
+  if (!repetitionEnabled) return true;
+
+  const errors = [];
+
+  if (!aspectRatio && !customRatio) {
+    errors.push('Please select an aspect ratio');
+  }
+
+  if (!targetDimension || targetDimension <= 0) {
+    errors.push('Please enter a valid target dimension');
+  }
+
+  if (customRatio) {
+    const ratio = parseCustomRatio(customRatio);
+    if (!ratio) {
+      errors.push('Invalid custom ratio format. Use format width:height (e.g., 4:3)');
+    }
+  }
+
+  errors.forEach(error => toast.error(error));
+  return errors.length === 0;
+};
+
+export const parseCustomRatio = (value) => {
+  const parts = value.split(':');
+  if (parts.length === 2) {
+    const [width, height] = parts.map(Number);
+    if (!isNaN(width) && !isNaN(height) && height !== 0) {
+      return width / height;
+    }
+  }
+  return null;
+};

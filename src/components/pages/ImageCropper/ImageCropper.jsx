@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useCropperActions } from './hooks/useCropperActions';
 import { useErrorHandler } from './hooks/useErrorHandler';
@@ -9,8 +9,11 @@ import CroppedImagesGallery from './components/CroppedImagesGallery';
 import ImageCropperCanvas from './components/ImageCropperCanvas';
 import ErrorDisplay from './components/ErrorDisplay';
 import LoadingSpinner from './components/LoadingSpinner';
+import RepetitionControls from './components/RepetitionControls';
+import { validateRepetitionSettings } from './utils/cropperUtils';
 
 const ImageCropper = () => {
+    const [repetitionSettings, setRepetitionSettings] = useState({});
     const { error, handleError } = useErrorHandler();
     const { loading, startLoading, stopLoading } = useLoadingState();
     const { image, handleFileChange } = useImageUpload(handleError, startLoading, stopLoading);
@@ -24,6 +27,17 @@ const ImageCropper = () => {
         handleRestore,
     } = useCropperActions(handleError, startLoading, stopLoading);
 
+    const handleRepetitionSettingsChange = (settings) => {
+        setRepetitionSettings({ ...repetitionSettings, ...settings });
+    };
+
+    const enhancedHandleCrop = async () => {
+        if (repetitionSettings.repetitionEnabled && !validateRepetitionSettings(repetitionSettings)) {
+            return;
+        }
+        await handleCrop(repetitionSettings);
+    };
+
     return (
         <div className="max-w-4xl mx-auto p-4">
             <ErrorDisplay error={error} />
@@ -32,9 +46,13 @@ const ImageCropper = () => {
             <div className="space-y-4">
                 <CropControls
                     onFileChange={handleFileChange}
-                    onCrop={handleCrop}
+                    onCrop={enhancedHandleCrop}
                     onDownload={handleDownload}
                     onRestore={handleRestore}
+                />
+                <RepetitionControls
+                    settings={repetitionSettings}
+                    onChange={handleRepetitionSettingsChange}
                 />
 
                 {cropData && <CropDataDisplay cropData={cropData} />}
@@ -43,8 +61,10 @@ const ImageCropper = () => {
                     <ImageCropperCanvas
                         image={image}
                         cropperRef={cropperRef}
-                        onReady={() => console.log('Cropper component initialized')}
+                        onReady={() => console.log('Cropper initialized')}
                         onChange={handleCropChange}
+                        aspectRatio={repetitionSettings.repetitionEnabled ?
+                            parseFloat(repetitionSettings.aspectRatio) : undefined}
                     />
                 )}
 
