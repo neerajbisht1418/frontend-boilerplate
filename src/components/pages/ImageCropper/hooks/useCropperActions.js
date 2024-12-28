@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
-import { roundCropData, createImageDownloadLink } from '../utils/cropperUtils';
+import { roundCropData, createImageDownloadLink, validateCropBounds } from '../utils/cropperUtils';
 import { ERROR_CODES } from '../constants/errors';
+import { toast } from 'react-toastify';
 
 export const useCropperActions = (handleError, startLoading, stopLoading) => {
     const [croppedImages, setCroppedImages] = useState([]);
@@ -15,7 +16,10 @@ export const useCropperActions = (handleError, startLoading, stopLoading) => {
 
         try {
             const data = cropperRef.current.cropper.getData();
-            const roundedData = roundCropData(data);
+            const image = cropperRef.current.cropper.getImageData();
+            console.log("data", data)
+            console.log("image", image)
+            const roundedData = roundCropData(data, image);
             console.log('Crop area updated:', roundedData);
             setCropData(roundedData);
         } catch (error) {
@@ -23,33 +27,29 @@ export const useCropperActions = (handleError, startLoading, stopLoading) => {
         }
     }, []);
 
-    const handleCrop = useCallback(async () => {
+    const handleCrop = async () => {
+        if (!validateCropBounds(cropperRef)) {
+            return;
+        }
+
         if (!cropperRef.current?.cropper) {
-            console.warn('Cropper not initialized');
+            toast.error('Cropper not initialized.');
             return;
         }
 
         startLoading('crop');
-        console.log('Starting crop operation');
-
         try {
             const croppedCanvas = cropperRef.current.cropper.getCroppedCanvas();
-            const croppedImage = croppedCanvas.toDataURL("image/png");
-
-            console.log('Crop successful', {
-                width: croppedCanvas.width,
-                height: croppedCanvas.height,
-                dataSize: `${(croppedImage.length / 1024).toFixed(2)} KB`
-            });
-
-            setCroppedImages(prev => [...prev, croppedImage]);
+            const croppedImage = croppedCanvas.toDataURL('image/png');
+            toast.success('Crop successful!');
+            setCroppedImages(prev => [...prev, croppedImage])
         } catch (error) {
             console.error('Crop operation failed:', error);
-            handleError(ERROR_CODES.CROP_OPERATION, error);
+            handleError('CROP_OPERATION_FAILED', error);
         } finally {
             stopLoading();
         }
-    }, [handleError, startLoading, stopLoading]);
+    };
 
     const handleDownload = useCallback(async () => {
         if (!cropperRef.current?.cropper) {
