@@ -1,4 +1,3 @@
-// src/features/image-cropper/components/RepetitionControls.jsx
 import React, { useState } from 'react';
 
 const commonAspectRatios = [
@@ -13,6 +12,7 @@ const RepetitionControls = ({ onChange }) => {
   const [customRatio, setCustomRatio] = useState('');
   const [fixedDimension, setFixedDimension] = useState('width');
   const [targetDimension, setTargetDimension] = useState('');
+  const [repeatBothDirections, setRepeatBothDirections] = useState(false); // New state for repeating in both directions
 
   const updateSettings = (updates) => {
     const newSettings = {
@@ -20,6 +20,7 @@ const RepetitionControls = ({ onChange }) => {
       aspectRatio: aspectRatio === 'custom' ? customRatio : aspectRatio,
       fixedDimension,
       targetDimension,
+      repeatBothDirections, // Add repeatBothDirections to settings
       ...updates
     };
     console.log('Updating repetition settings:', newSettings);
@@ -55,6 +56,12 @@ const RepetitionControls = ({ onChange }) => {
     const value = e.target.value;
     setTargetDimension(value);
     updateSettings({ targetDimension: value });
+  };
+
+  const handleRepeatBothDirectionsChange = () => {
+    const newValue = !repeatBothDirections;
+    setRepeatBothDirections(newValue);
+    updateSettings({ repeatBothDirections: newValue });
   };
 
   return (
@@ -119,6 +126,17 @@ const RepetitionControls = ({ onChange }) => {
               onChange={handleDimensionChange}
               className="block w-full mt-1 border rounded-md shadow-sm"
             />
+          </div>
+
+          {/* Checkbox for repeating in both horizontal and vertical directions */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={repeatBothDirections}
+              onChange={handleRepeatBothDirectionsChange}
+              className="form-checkbox"
+            />
+            <span>Repeat in Both Horizontal and Vertical Directions</span>
           </div>
         </div>
       )}

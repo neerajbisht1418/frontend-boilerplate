@@ -27,60 +27,58 @@ export const useCropperActions = (handleError, startLoading, stopLoading) => {
         }
     }, []);
 
-    const handleCrop = async (repetitionSettings) => {
-        console.log('Starting crop with settings:', repetitionSettings);
+    const handleCrop = async (repetitionSettings, repetitionBothDirectionsSettings) => {
+        console.log("Starting crop operation with settings:", repetitionSettings);
 
         if (!validateCropBounds(cropperRef)) {
-            console.error('Invalid crop bounds');
+            console.error("Invalid crop bounds");
             return;
         }
 
         if (!cropperRef.current?.cropper) {
-            console.error('Cropper not initialized');
-            toast.error('Cropper not initialized.');
+            console.error("Cropper not initialized");
+            toast.error("Cropper not initialized.");
             return;
         }
-
-        startLoading('crop');
+        startLoading("crop");
         try {
-            const cropData = cropperRef.current.cropper.getData(true); // Get actual pixel values
-            console.log('Original crop data:', cropData);
-
-            // Get the cropped canvas
-            const croppedCanvas = cropperRef.current.cropper.getCroppedCanvas({
-                imageSmoothingEnabled: true,
-                imageSmoothingQuality: 'high'
-            });
-
+            const croppedCanvas = cropperRef.current.cropper.getCroppedCanvas();
             let finalImage;
-            if (repetitionSettings.repetitionEnabled) {
-                // Calculate dimensions for repetition
+
+            if (repetitionBothDirectionsSettings?.repeatBothDirections) {
+                console.log("repetitionBothDirectionsSettings", repetitionBothDirectionsSettings)
+                let dimensions = {
+                    width: repetitionBothDirectionsSettings?.width,
+                    height: repetitionBothDirectionsSettings?.height,
+                }
+                console.log("Repetition Both enabled, processing...");
+                const repeatedCanvas = await createRepeatedImage(croppedCanvas, dimensions);
+                finalImage = repeatedCanvas.toDataURL("image/png");
+                console.log("Repeated image created successfully");
+
+            } else if (repetitionSettings.repetitionEnabled) {
+                console.log("Repetition enabled, processing...");
+                const cropData = cropperRef.current.cropper.getData();
                 const dimensions = calculateRepetitionDimensions(
                     cropData,
                     parseInt(repetitionSettings.targetDimension, 10),
-                    repetitionSettings.fixedDimension || 'width'
+                    repetitionSettings.fixedDimension,
+                    repetitionSettings
                 );
 
-                // Create the repeated image
                 const repeatedCanvas = await createRepeatedImage(croppedCanvas, dimensions);
-
-                // Convert to data URL with high quality
-                finalImage = repeatedCanvas.toDataURL('image/png', 1.0);
-
-                console.log('Created repeated image with dimensions:', {
-                    width: repeatedCanvas.width,
-                    height: repeatedCanvas.height
-                });
+                finalImage = repeatedCanvas.toDataURL("image/png");
+                console.log("Repeated image created successfully");
             } else {
-                finalImage = croppedCanvas.toDataURL('image/png', 1.0);
-                console.log('Created single crop');
+                finalImage = croppedCanvas.toDataURL("image/png");
+                console.log("Single crop created successfully");
             }
 
-            setCroppedImages(prev => [...prev, finalImage]);
-            toast.success('Crop successful!');
+            setCroppedImages((prev) => [...prev, finalImage]);
+            toast.success("Crop operation completed!");
         } catch (error) {
-            console.error('Crop failed:', error);
-            handleError('CROP_OPERATION_FAILED', error);
+            console.error("Crop operation failed:", error);
+            handleError("CROP_OPERATION_FAILED", error);
         } finally {
             stopLoading();
         }

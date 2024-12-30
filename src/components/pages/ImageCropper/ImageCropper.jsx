@@ -11,9 +11,15 @@ import ErrorDisplay from './components/ErrorDisplay';
 import LoadingSpinner from './components/LoadingSpinner';
 import RepetitionControls from './components/RepetitionControls';
 import { validateRepetitionSettings } from './utils/cropperUtils';
+import RepetitionBothDirectionsControls from './components/RepetitionBothDirectionsControls';
 
 const ImageCropper = () => {
     const [repetitionSettings, setRepetitionSettings] = useState({});
+    const [repetitionBothDirectionsSettings, setRepetitionBothDirectionsSettings] = useState({
+        repeatBothDirections: false,
+        width: '',
+        height: ''
+    });
     const { error, handleError } = useErrorHandler();
     const { loading, startLoading, stopLoading } = useLoadingState();
     const { image, handleFileChange } = useImageUpload(handleError, startLoading, stopLoading);
@@ -27,17 +33,27 @@ const ImageCropper = () => {
         handleRestore,
     } = useCropperActions(handleError, startLoading, stopLoading);
 
-    const handleRepetitionSettingsChange = (settings) => {
-        setRepetitionSettings({ ...repetitionSettings, ...settings });
+    const handleRepetitionSettingsChange = (newSettings) => {
+        setRepetitionSettings((prevSettings) => ({
+            ...prevSettings,
+            ...newSettings,
+        }));
+    };
+
+    const handleRepetitionBothSettingsChange = (newSettings) => {
+        setRepetitionBothDirectionsSettings((prevSettings) => ({
+            ...prevSettings,
+            ...newSettings,
+        }));
     };
 
     const enhancedHandleCrop = async () => {
         if (repetitionSettings.repetitionEnabled && !validateRepetitionSettings(repetitionSettings)) {
             return;
         }
-        await handleCrop(repetitionSettings);
+        await handleCrop(repetitionSettings, repetitionBothDirectionsSettings);
     };
-
+    
     return (
         <div className="max-w-4xl mx-auto p-4">
             <ErrorDisplay error={error} />
@@ -53,6 +69,11 @@ const ImageCropper = () => {
                 <RepetitionControls
                     settings={repetitionSettings}
                     onChange={handleRepetitionSettingsChange}
+                />
+
+                <RepetitionBothDirectionsControls
+                    settings={repetitionBothDirectionsSettings}
+                    onChange={handleRepetitionBothSettingsChange}
                 />
 
                 {cropData && <CropDataDisplay cropData={cropData} />}

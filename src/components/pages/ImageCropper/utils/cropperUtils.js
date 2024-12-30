@@ -123,71 +123,107 @@ export const parseCustomRatio = (value) => {
   return null;
 };
 
-export const calculateRepetitionDimensions = (cropData, targetDimension, fixedDimension = 'width') => {
-  console.log('Input:', { cropData, targetDimension, fixedDimension });
-
-  const originalWidth = Math.round(cropData.width);
-  const originalHeight = Math.round(cropData.height);
-  const aspectRatio = originalWidth / originalHeight;
-  
-  console.log('Original dimensions:', {
-    width: originalWidth,
-    height: originalHeight,
-    aspectRatio
+export const calculateRepetitionDimensions = (cropData, targetDimension, fixedDimension = 'width', repetitionSettings) => {
+  console.log('Calculating repetition dimensions:', {
+    cropData,
+    targetDimension,
+    fixedDimension,
+    repetitionSettings
   });
 
-  let finalWidth, finalHeight;
-  const parsedTarget = parseInt(targetDimension, 10);
-
-  if (fixedDimension === 'width') {
-    finalWidth = parsedTarget;
-    finalHeight = Math.round(finalWidth / aspectRatio);
-  } else {
-    finalHeight = parsedTarget;
-    finalWidth = Math.round(finalHeight * aspectRatio);
+  const { width: cropWidth, height: cropHeight } = cropData;
+  if (!cropWidth || !cropHeight) {
+    console.error('Invalid crop data, missing width or height.');
+    return null;
   }
 
-  // Calculate how many complete repetitions are needed
-  const horizontalCount = Math.ceil(finalWidth / originalWidth);
-  const verticalCount = Math.ceil(finalHeight / originalHeight);
+  // Parse aspect ratio from string (e.g., "2:4" -> { x: 2, y: 4 })
+  const [aspectRatioWidth, aspectRatioHeight] = repetitionSettings.aspectRatio.split(':').map(Number);
+  if (!aspectRatioWidth || !aspectRatioHeight) {
+    console.error('Invalid aspect ratio:', repetitionSettings.aspectRatio);
+    return null;
+  }
 
-  console.log('Calculated repetitions:', {
-    horizontalCount,
-    verticalCount,
-    finalWidth,
-    finalHeight
-  });
+  // Calculate the aspect ratio and fix it to 1 decimal place
+  let aspectRatio = aspectRatioWidth / aspectRatioHeight;
+  aspectRatio = aspectRatio.toFixed(1);  // Fixed to 1 decimal place
 
-  return {
+  console.log('Parsed and fixed aspect ratio:', aspectRatio);
+
+  let finalWidth, finalHeight;
+
+  if (fixedDimension === 'width') {
+    // Fixed width, calculate height based on aspect ratio
+    finalWidth = targetDimension;
+    finalHeight = finalWidth / aspectRatio; // Maintain aspect ratio
+    console.log('Fixed width calculation:', { finalWidth, finalHeight });
+  } else if (fixedDimension === 'height') {
+    // Fixed height, calculate width based on aspect ratio
+    finalHeight = targetDimension;
+    finalWidth = finalHeight * aspectRatio; // Maintain aspect ratio
+    console.log('Fixed height calculation:', { finalWidth, finalHeight });
+  } else {
+    console.error('Invalid fixed dimension provided.');
+    return null;
+  }
+
+  // Ensure height is calculated and not null
+  if (!finalHeight) {
+    console.error('Calculated height is invalid or null.');
+    return null;
+  }
+
+  // Calculate repetitions based on final dimensions
+  const horizontalRepetitions = Math.ceil(finalWidth / cropWidth);
+  const verticalRepetitions = Math.ceil(finalHeight / cropHeight);
+
+  console.log('Repetition calculations:', { horizontalRepetitions, verticalRepetitions });
+
+  const finalDimensions = {
     width: finalWidth,
     height: finalHeight,
-    originalWidth,
-    originalHeight,
-    horizontalCount,
-    verticalCount
+    horizontalRepetitions,
+    verticalRepetitions
   };
+
+  console.log('Calculated final dimensions:', finalDimensions);
+  return finalDimensions;
 };
 
 export const createRepeatedImage = async (croppedCanvas, dimensions) => {
-  console.log('Creating repeated image with dimensions:', dimensions);
+  console.log("Creating repeated image with dimensions:", dimensions);
 
-  const finalCanvas = document.createElement('canvas');
-  const ctx = finalCanvas.getContext('2d');
+  const finalCanvas = document.createElement("canvas");
+  const ctx = finalCanvas.getContext("2d");
 
-  // Set the canvas size to the calculated dimensions
+  // Set final canvas size
   finalCanvas.width = dimensions.width;
   finalCanvas.height = dimensions.height;
 
-  // Create a pattern from the original cropped canvas
-  const pattern = ctx.createPattern(croppedCanvas, 'repeat');
-  if (!pattern) {
-    console.error('Failed to create pattern');
-    return croppedCanvas;
-  }
-
-  // Fill the entire canvas with the pattern
-  ctx.fillStyle = pattern;
+  // Fill with white background
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
+  const pattern = ctx.createPattern(croppedCanvas, "repeat");
+  ctx.fillStyle = pattern;
+
+  // Calculate the number of repetitions for horizontal and vertical
+  const horizontalRepetitions = Math.ceil(dimensions.width / croppedCanvas.width);
+  const verticalRepetitions = Math.ceil(dimensions.height / croppedCanvas.height);
+
+  // Repeat horizontally and vertically
+  for (let i = 0; i < horizontalRepetitions; i++) {
+    for (let j = 0; j < verticalRepetitions; j++) {
+      ctx.drawImage(
+        croppedCanvas,
+        i * croppedCanvas.width,
+        j * croppedCanvas.height,
+        croppedCanvas.width,
+        croppedCanvas.height
+      );
+    }
+  }
+
+  console.log("Repeated image created");
   return finalCanvas;
 };
