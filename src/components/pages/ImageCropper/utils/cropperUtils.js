@@ -85,29 +85,31 @@ export const validateCropBounds = (cropperRef) => {
 };
 
 export const validateRepetitionSettings = (settings) => {
-  const { repetitionEnabled, aspectRatio, targetDimension, customRatio } = settings;
+  console.log('Validating repetition settings:', settings);
 
-  if (!repetitionEnabled) return true;
-
-  const errors = [];
-
-  if (!aspectRatio && !customRatio) {
-    errors.push('Please select an aspect ratio');
+  if (!settings.repetitionEnabled) {
+    console.log('Repetition not enabled, skipping validation');
+    return true;
   }
 
-  if (!targetDimension || targetDimension <= 0) {
-    errors.push('Please enter a valid target dimension');
+  const { aspectRatio, targetDimension } = settings;
+
+  if (!aspectRatio || !targetDimension) {
+    console.error('Missing required repetition settings', {
+      aspectRatio: !!aspectRatio,
+      targetDimension: !!targetDimension
+    });
+    return false;
   }
 
-  if (customRatio) {
-    const ratio = parseCustomRatio(customRatio);
-    if (!ratio) {
-      errors.push('Invalid custom ratio format. Use format width:height (e.g., 4:3)');
-    }
+  const parsedTarget = parseInt(targetDimension, 10);
+  if (isNaN(parsedTarget) || parsedTarget <= 0) {
+    console.error('Invalid target dimension:', targetDimension);
+    return false;
   }
 
-  errors.forEach(error => toast.error(error));
-  return errors.length === 0;
+  console.log('Repetition settings valid');
+  return true;
 };
 
 export const parseCustomRatio = (value) => {
@@ -119,4 +121,73 @@ export const parseCustomRatio = (value) => {
     }
   }
   return null;
+};
+
+export const calculateRepetitionDimensions = (cropData, targetDimension, fixedDimension = 'width') => {
+  console.log('Input:', { cropData, targetDimension, fixedDimension });
+
+  const originalWidth = Math.round(cropData.width);
+  const originalHeight = Math.round(cropData.height);
+  const aspectRatio = originalWidth / originalHeight;
+  
+  console.log('Original dimensions:', {
+    width: originalWidth,
+    height: originalHeight,
+    aspectRatio
+  });
+
+  let finalWidth, finalHeight;
+  const parsedTarget = parseInt(targetDimension, 10);
+
+  if (fixedDimension === 'width') {
+    finalWidth = parsedTarget;
+    finalHeight = Math.round(finalWidth / aspectRatio);
+  } else {
+    finalHeight = parsedTarget;
+    finalWidth = Math.round(finalHeight * aspectRatio);
+  }
+
+  // Calculate how many complete repetitions are needed
+  const horizontalCount = Math.ceil(finalWidth / originalWidth);
+  const verticalCount = Math.ceil(finalHeight / originalHeight);
+
+  console.log('Calculated repetitions:', {
+    horizontalCount,
+    verticalCount,
+    finalWidth,
+    finalHeight
+  });
+
+  return {
+    width: finalWidth,
+    height: finalHeight,
+    originalWidth,
+    originalHeight,
+    horizontalCount,
+    verticalCount
+  };
+};
+
+export const createRepeatedImage = async (croppedCanvas, dimensions) => {
+  console.log('Creating repeated image with dimensions:', dimensions);
+
+  const finalCanvas = document.createElement('canvas');
+  const ctx = finalCanvas.getContext('2d');
+
+  // Set the canvas size to the calculated dimensions
+  finalCanvas.width = dimensions.width;
+  finalCanvas.height = dimensions.height;
+
+  // Create a pattern from the original cropped canvas
+  const pattern = ctx.createPattern(croppedCanvas, 'repeat');
+  if (!pattern) {
+    console.error('Failed to create pattern');
+    return croppedCanvas;
+  }
+
+  // Fill the entire canvas with the pattern
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+  return finalCanvas;
 };

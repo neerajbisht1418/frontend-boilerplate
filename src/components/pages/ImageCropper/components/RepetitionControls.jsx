@@ -14,28 +14,47 @@ const RepetitionControls = ({ onChange }) => {
   const [fixedDimension, setFixedDimension] = useState('width');
   const [targetDimension, setTargetDimension] = useState('');
 
+  const updateSettings = (updates) => {
+    const newSettings = {
+      repetitionEnabled,
+      aspectRatio: aspectRatio === 'custom' ? customRatio : aspectRatio,
+      fixedDimension,
+      targetDimension,
+      ...updates
+    };
+    console.log('Updating repetition settings:', newSettings);
+    onChange(newSettings);
+  };
+
   const handleRepetitionChange = () => {
-    setRepetitionEnabled(!repetitionEnabled);
-    onChange({ repetitionEnabled: !repetitionEnabled });
+    const newEnabled = !repetitionEnabled;
+    setRepetitionEnabled(newEnabled);
+    updateSettings({ repetitionEnabled: newEnabled });
   };
 
   const handleAspectRatioChange = (value) => {
     setAspectRatio(value);
     if (value !== 'custom') {
-      onChange({ aspectRatio: value });
+      updateSettings({ aspectRatio: value });
     }
   };
 
   const handleCustomRatioChange = (e) => {
     const value = e.target.value;
     setCustomRatio(value);
-    onChange({ aspectRatio: value });
+    updateSettings({ aspectRatio: value });
+  };
+
+  const handleFixedDimensionChange = (e) => {
+    const value = e.target.value;
+    setFixedDimension(value);
+    updateSettings({ fixedDimension: value });
   };
 
   const handleDimensionChange = (e) => {
     const value = e.target.value;
     setTargetDimension(value);
-    onChange({ targetDimension: value });
+    updateSettings({ targetDimension: value });
   };
 
   return (
@@ -82,7 +101,7 @@ const RepetitionControls = ({ onChange }) => {
             <label className="block text-sm font-medium">Fix Dimension</label>
             <select
               value={fixedDimension}
-              onChange={(e) => setFixedDimension(e.target.value)}
+              onChange={handleFixedDimensionChange}
               className="block w-full mt-1 border rounded-md shadow-sm"
             >
               <option value="width">Width</option>

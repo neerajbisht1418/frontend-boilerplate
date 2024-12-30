@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { roundCropData, createImageDownloadLink, validateCropBounds } from '../utils/cropperUtils';
+import { roundCropData, createImageDownloadLink, validateCropBounds, calculateRepetitionDimensions, createRepeatedImage } from '../utils/cropperUtils';
 import { ERROR_CODES } from '../constants/errors';
 import { toast } from 'react-toastify';
 
@@ -27,29 +27,65 @@ export const useCropperActions = (handleError, startLoading, stopLoading) => {
         }
     }, []);
 
-    const handleCrop = async () => {
+    const handleCrop = async (repetitionSettings) => {
+        console.log('Starting crop with settings:', repetitionSettings);
+
         if (!validateCropBounds(cropperRef)) {
+            console.error('Invalid crop bounds');
             return;
         }
 
         if (!cropperRef.current?.cropper) {
+            console.error('Cropper not initialized');
             toast.error('Cropper not initialized.');
             return;
         }
 
         startLoading('crop');
         try {
-            const croppedCanvas = cropperRef.current.cropper.getCroppedCanvas();
-            const croppedImage = croppedCanvas.toDataURL('image/png');
+            const cropData = cropperRef.current.cropper.getData(true); // Get actual pixel values
+            console.log('Original crop data:', cropData);
+
+            // Get the cropped canvas
+            const croppedCanvas = cropperRef.current.cropper.getCroppedCanvas({
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+
+            let finalImage;
+            if (repetitionSettings.repetitionEnabled) {
+                // Calculate dimensions for repetition
+                const dimensions = calculateRepetitionDimensions(
+                    cropData,
+                    parseInt(repetitionSettings.targetDimension, 10),
+                    repetitionSettings.fixedDimension || 'width'
+                );
+
+                // Create the repeated image
+                const repeatedCanvas = await createRepeatedImage(croppedCanvas, dimensions);
+
+                // Convert to data URL with high quality
+                finalImage = repeatedCanvas.toDataURL('image/png', 1.0);
+
+                console.log('Created repeated image with dimensions:', {
+                    width: repeatedCanvas.width,
+                    height: repeatedCanvas.height
+                });
+            } else {
+                finalImage = croppedCanvas.toDataURL('image/png', 1.0);
+                console.log('Created single crop');
+            }
+
+            setCroppedImages(prev => [...prev, finalImage]);
             toast.success('Crop successful!');
-            setCroppedImages(prev => [...prev, croppedImage])
         } catch (error) {
-            console.error('Crop operation failed:', error);
+            console.error('Crop failed:', error);
             handleError('CROP_OPERATION_FAILED', error);
         } finally {
             stopLoading();
         }
     };
+
 
     const handleDownload = useCallback(async () => {
         if (!cropperRef.current?.cropper) {
