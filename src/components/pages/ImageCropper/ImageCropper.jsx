@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useCropperActions } from './hooks/useCropperActions';
 import { useErrorHandler } from './hooks/useErrorHandler';
@@ -12,6 +12,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import RepetitionControls from './components/RepetitionControls';
 import { validateRepetitionSettings } from './utils/cropperUtils';
 import RepetitionBothDirectionsControls from './components/RepetitionBothDirectionsControls';
+import FixedWidthAspectRatioControls from './components/FixedWidthAspectRatioControls';
 
 const ImageCropper = () => {
     const [selectedCroppedImage, setSelectedCroppedImage] = useState(null)
@@ -20,6 +21,12 @@ const ImageCropper = () => {
         repeatBothDirections: false,
         width: '',
         height: ''
+    });
+    const [fixedWidthSettings, setFixedWidthSettings] = useState({
+        fixedWidthEnabled: false,
+        width: '',
+        aspectRatio: '',
+        calculatedHeight: ''
     });
     const { error, handleError } = useErrorHandler();
     const { loading, startLoading, stopLoading } = useLoadingState();
@@ -52,14 +59,23 @@ const ImageCropper = () => {
         if (repetitionSettings.repetitionEnabled && !validateRepetitionSettings(repetitionSettings)) {
             return;
         }
-        await handleCrop(repetitionSettings, repetitionBothDirectionsSettings);
+        await handleCrop(repetitionSettings, repetitionBothDirectionsSettings, fixedWidthSettings);
     };
 
     const handleSelectedCroppedImage = (image) => {
         setSelectedCroppedImage(image)
     }
 
-    console.log("selectedCroppedImage", selectedCroppedImage)
+    const handleFixedWidthSettingsChange = (newSettings) => {
+        setFixedWidthSettings(prevSettings => ({
+            ...prevSettings,
+            ...newSettings
+        }));
+    };
+
+    useEffect(() => {
+        setFixedWidthSettings({ ...fixedWidthSettings, width: cropData?.width })
+    }, [cropData?.width])
 
     return (
         <div className="max-w-4xl mx-auto p-4">
@@ -81,6 +97,12 @@ const ImageCropper = () => {
                 <RepetitionBothDirectionsControls
                     settings={repetitionBothDirectionsSettings}
                     onChange={handleRepetitionBothSettingsChange}
+                />
+
+                <FixedWidthAspectRatioControls
+                    settings={fixedWidthSettings}
+                    onChange={handleFixedWidthSettingsChange}
+                    cropData={cropData}
                 />
 
                 {cropData && <CropDataDisplay cropData={cropData} />}

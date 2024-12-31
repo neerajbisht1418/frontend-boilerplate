@@ -27,7 +27,7 @@ export const useCropperActions = (handleError, startLoading, stopLoading) => {
         }
     }, []);
 
-    const handleCrop = async (repetitionSettings, repetitionBothDirectionsSettings) => {
+    const handleCrop = async (repetitionSettings, repetitionBothDirectionsSettings, fixedWidthSettings) => {
         console.log("Starting crop operation with settings:", repetitionSettings);
 
         if (!validateCropBounds(cropperRef)) {
@@ -45,18 +45,62 @@ export const useCropperActions = (handleError, startLoading, stopLoading) => {
             const croppedCanvas = cropperRef.current.cropper.getCroppedCanvas();
             let finalImage;
 
-            if (repetitionBothDirectionsSettings?.repeatBothDirections) {
-                console.log("repetitionBothDirectionsSettings", repetitionBothDirectionsSettings)
+            if (fixedWidthSettings?.fixedWidthEnabled) {
+                console.log("fixedWidthSettings", fixedWidthSettings)
                 let dimensions = {
-                    width: repetitionBothDirectionsSettings?.width,
-                    height: repetitionBothDirectionsSettings?.height,
+                    width: fixedWidthSettings?.width,
+                    height: fixedWidthSettings?.calculatedHeight,
                 }
                 console.log("Repetition Both enabled, processing...");
                 const repeatedCanvas = await createRepeatedImage(croppedCanvas, dimensions);
                 finalImage = repeatedCanvas.toDataURL("image/png");
                 console.log("Repeated image created successfully");
 
-            } else if (repetitionSettings.repetitionEnabled) {
+            } else if (repetitionBothDirectionsSettings?.repeatBothDirections) {
+                console.log("repetitionBothDirectionsSettings", repetitionBothDirectionsSettings);
+
+                let croppedWidth = croppedCanvas.width;
+                let croppedHeight = croppedCanvas.height;
+
+                // Target dimensions with 2:3 aspect ratio
+                let dimensions = {
+                    width: 1000,
+                    height: 1500,
+                };
+
+                if (croppedWidth < dimensions.width || croppedHeight < dimensions.height) {
+                    // Repeat the image if the cropped dimensions are smaller than the target dimensions
+                    const repeatedCanvas = await createRepeatedImage(croppedCanvas, dimensions);
+                    finalImage = repeatedCanvas.toDataURL("image/png");
+                    console.log("Repeated image created successfully");
+                } else {
+                    // Maintain the 2:3 aspect ratio
+                    const aspectWidth = 2;
+                    const aspectHeight = 3;
+
+                    let newWidth, newHeight;
+
+                    // Calculate new dimensions based on the aspect ratio
+                    if (croppedWidth / aspectWidth > croppedHeight / aspectHeight) {
+                        // Base scaling on height
+                        newHeight = croppedHeight;
+                        newWidth = Math.ceil((newHeight * aspectWidth) / aspectHeight);
+                    } else {
+                        // Base scaling on width
+                        newWidth = croppedWidth;
+                        newHeight = Math.ceil((newWidth * aspectHeight) / aspectWidth);
+                    }
+
+                    // Ensure the new dimensions are larger than the target dimensions
+                    newWidth = Math.max(newWidth, dimensions.width);
+                    newHeight = Math.max(newHeight, dimensions.height);
+
+                    const repeatedCanvas = await createRepeatedImage(croppedCanvas, {width : newWidth, height : newHeight});
+                    finalImage = repeatedCanvas.toDataURL("image/png");
+                    console.log("Image adjusted to maintain 2:3 aspect ratio successfully");
+                }
+            }
+            else if (repetitionSettings.repetitionEnabled) {
                 console.log("Repetition enabled, processing...");
                 const cropData = cropperRef.current.cropper.getData();
                 const dimensions = calculateRepetitionDimensions(
