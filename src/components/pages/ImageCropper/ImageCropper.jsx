@@ -14,6 +14,7 @@ import { validateRepetitionSettings } from './utils/cropperUtils';
 import RepetitionBothDirectionsControls from './components/RepetitionBothDirectionsControls';
 
 const ImageCropper = () => {
+    const [selectedCroppedImage, setSelectedCroppedImage] = useState(null)
     const [repetitionSettings, setRepetitionSettings] = useState({});
     const [repetitionBothDirectionsSettings, setRepetitionBothDirectionsSettings] = useState({
         repeatBothDirections: false,
@@ -53,7 +54,13 @@ const ImageCropper = () => {
         }
         await handleCrop(repetitionSettings, repetitionBothDirectionsSettings);
     };
-    
+
+    const handleSelectedCroppedImage = (image) => {
+        setSelectedCroppedImage(image)
+    }
+
+    console.log("selectedCroppedImage", selectedCroppedImage)
+
     return (
         <div className="max-w-4xl mx-auto p-4">
             <ErrorDisplay error={error} />
@@ -90,7 +97,7 @@ const ImageCropper = () => {
                 )}
 
                 {croppedImages.length > 0 && (
-                    <CroppedImagesGallery images={croppedImages} />
+                    <CroppedImagesGallery onSelect={handleSelectedCroppedImage} images={croppedImages} />
                 )}
             </div>
         </div>
