@@ -7,7 +7,6 @@ const CanvasControls = ({
     setFabricRotation,
     handleCrop,
     handleDownload,
-    croppedImage
 }) => {
     return (
         <div className="w-full max-w-md space-y-4">
@@ -50,7 +49,6 @@ const CanvasControls = ({
                 <button
                     onClick={handleDownload}
                     className="flex-1"
-                    disabled={!croppedImage}
                 >
                     Download
                 </button>

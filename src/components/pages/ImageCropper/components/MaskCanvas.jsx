@@ -5,7 +5,7 @@ import { useCanvasTransform } from '../hooks/useCanvasTransform';
 import CanvasControls from './CanvasControls';
 import { useCanvasOperations } from '../hooks/useCanvasOperations';
 
-const MaskCanvas = ({ maskImage, showMask, selectedCroppedImage }) => {
+const MaskCanvas = ({ maskImage, showMask, selectedCroppedImage, setCroppedMaskImage }) => {
     const canvasRef = React.useRef();
 
     const { loadedImages, imageDimensions } = useImageLoader({
@@ -37,7 +37,8 @@ const MaskCanvas = ({ maskImage, showMask, selectedCroppedImage }) => {
         fabricPosition,
         fabricScale,
         fabricRotation,
-        imageDimensions
+        imageDimensions,
+        setCroppedMaskImage,
     });
 
     React.useEffect(() => {

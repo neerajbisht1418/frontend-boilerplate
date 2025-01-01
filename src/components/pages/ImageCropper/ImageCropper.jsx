@@ -17,6 +17,7 @@ import MaskCanvas from './components/MaskCanvas';
 import maskImages from "../../../assets/Shirt_mask.png"
 
 const ImageCropper = () => {
+    const [croppedMaskImage, setCroppedMaskImage] = useState([]);
     const [showMask, setShowMask] = useState(false);
     const [selectedCroppedImage, setSelectedCroppedImage] = useState(null)
     const [repetitionSettings, setRepetitionSettings] = useState({});
@@ -137,12 +138,17 @@ const ImageCropper = () => {
                         />
                         <span>Show Mask</span>
                     </label>
-                    {showMask && selectedCroppedImage && (  // Add conditional rendering
+                    {showMask && (  // Add conditional rendering
                         <MaskCanvas
                             selectedCroppedImage={selectedCroppedImage}
                             maskImage={maskImages}
                             showMask={showMask}
+                            setCroppedMaskImage={setCroppedMaskImage}
                         />
+                    )}
+
+                    {croppedMaskImage.length > 0 && (
+                        <CroppedImagesGallery onSelect={handleSelectedCroppedImage} images={croppedMaskImage} />
                     )}
                 </div>
             </div>

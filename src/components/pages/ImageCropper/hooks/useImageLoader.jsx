@@ -44,5 +44,7 @@ export const useImageLoader = ({ maskImage, selectedCroppedImage, canvasRef }) =
         }
     }, [maskImage, selectedCroppedImage]);
 
+    console.log("loadedImages", loadedImages)
+
     return { loadedImages, imageDimensions };
 };
