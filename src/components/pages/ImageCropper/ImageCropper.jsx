@@ -13,8 +13,11 @@ import RepetitionControls from './components/RepetitionControls';
 import { validateRepetitionSettings } from './utils/cropperUtils';
 import RepetitionBothDirectionsControls from './components/RepetitionBothDirectionsControls';
 import FixedWidthAspectRatioControls from './components/FixedWidthAspectRatioControls';
+import MaskCanvas from './components/MaskCanvas';
+import maskImages from "../../../assets/Shirt_mask.png"
 
 const ImageCropper = () => {
+    const [showMask, setShowMask] = useState(false);
     const [selectedCroppedImage, setSelectedCroppedImage] = useState(null)
     const [repetitionSettings, setRepetitionSettings] = useState({});
     const [repetitionBothDirectionsSettings, setRepetitionBothDirectionsSettings] = useState({
@@ -121,6 +124,27 @@ const ImageCropper = () => {
                 {croppedImages.length > 0 && (
                     <CroppedImagesGallery onSelect={handleSelectedCroppedImage} images={croppedImages} />
                 )}
+
+                <div className="mt-4 space-y-2">
+                    <label className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            checked={showMask}
+                            onChange={(e) => {
+                                setShowMask(e.target.checked);
+                                console.log("Show mask:", e.target.checked);  // Add this log
+                            }}
+                        />
+                        <span>Show Mask</span>
+                    </label>
+                    {showMask && selectedCroppedImage && (  // Add conditional rendering
+                        <MaskCanvas
+                            selectedCroppedImage={selectedCroppedImage}
+                            maskImage={maskImages}
+                            showMask={showMask}
+                        />
+                    )}
+                </div>
             </div>
         </div>
     );
